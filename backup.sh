@@ -22,6 +22,9 @@ else
     output_file+="_I" # set flag "I" for Incremental backup
 fi
 output_file+=".tar.gz"
+output_file_encrypted=$output_file".pgp"
+bucket=$( jq -r .bucket "$config_file" )
+pgp_recipient=$( jq -r .pgp_recipient "$config_file" )
 
 # Removing index_file in order to force tar to create a full backup
 if  [ "$full_backup" = true ]; then
@@ -30,3 +33,10 @@ fi
 
 # Create archive and create/update index file
 tar --create --gzip --listed-incremental=$index_file --verbose --file=$output_file $source_folders
+
+# Encrypt
+echo $output_file_encrypted
+gpg --output $output_file_encrypted --encrypt --recipient $pgp_recipient  $output_file
+
+# Upload
+gsutil cp $output_file_encrypted  gs://$bucket/
