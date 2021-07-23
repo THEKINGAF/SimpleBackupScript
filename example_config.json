@@ -1,0 +1,7 @@
+{                                 
+  "source_folders": ["/home","/etc","/var"],
+  "bucket": "BUCKET_NAME.storage.googleapis.com",
+  "index_file": "index.snar",
+  "backup_prefix": "my-backup",
+  "pgp_recipient": "John Doe"
+}         
