@@ -4,8 +4,8 @@ SimpleBackupScript is a tool that creates incremental backups and store them in 
 
 ## Dependencies
 * jq
-* GPG2
-* gsutils
+* GnuPG
+* gsutil
 
 ## Usage
 
