@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Retrieve arguments
 while getopts c:F flag
 do
     case "${flag}" in
@@ -8,7 +9,14 @@ do
     esac
 done
 
+# Stop script on error
+set -o pipefail -e
+
 # Parse config file and set variables
+if [[ ! -f "$config_file" ]]; then
+    >&2 echo "ERROR: config file not found"
+    exit 1
+fi
 date=$(date +"%Y%m%d_%H%M")
 readarray -t source_folders < <(jq -r '.source_folders[]' "$config_file")
 index_file=$( jq -r .index_file "$config_file" )
@@ -35,8 +43,15 @@ fi
 tar --create --gzip --listed-incremental="$index_file" --verbose --file="$output_file" "${source_folders[@]}"
 
 # Encrypt
-echo $output_file_encrypted
 gpg --output "$output_file_encrypted" --encrypt --recipient "$pgp_recipient" "$output_file"
 
 # Upload
 gsutil cp "$output_file_encrypted" "gs://$bucket/"
+
+# Remove local backup file
+rm "$output_file_encrypted"
+
+# Unset "stop script on error"
+set +o pipefail +e
+
+exit 0
