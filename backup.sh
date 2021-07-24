@@ -29,8 +29,7 @@ if  [ "$full_backup" = true ]; then
 else
     output_file+="_I" # set flag "I" for Incremental backup
 fi
-output_file+=".tar.gz"
-output_file_encrypted=$output_file".pgp"
+output_file+=".tar.gz.pgp"
 bucket=$( jq -r .bucket "$config_file" )
 pgp_recipient=$( jq -r .pgp_recipient "$config_file" )
 
@@ -39,17 +38,14 @@ if  [ "$full_backup" = true ]; then
     rm -f "$index_file"
 fi
 
-# Create archive and create/update index file
-tar --create --gzip --listed-incremental="$index_file" --verbose --file="$output_file" "${source_folders[@]}"
-
-# Encrypt
-gpg --output "$output_file_encrypted" --encrypt --recipient "$pgp_recipient" "$output_file"
+# Create archive, create/update index file and encrypt
+tar --create --gzip --listed-incremental="$index_file" --verbose "${source_folders[@]}" | gpg --output "$output_file" --encrypt --recipient "$pgp_recipient"
 
 # Upload
-gsutil cp "$output_file_encrypted" "gs://$bucket/"
+gsutil cp "$output_file" "gs://$bucket/"
 
 # Remove local backup file
-rm "$output_file_encrypted"
+rm "$output_file"
 
 # Unset "stop script on error"
 set +o pipefail +e
