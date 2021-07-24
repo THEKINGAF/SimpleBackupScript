@@ -10,7 +10,7 @@ done
 
 # Parse config file and set variables
 date=$(date +"%Y%m%d_%H%M")
-source_folders=$( jq -r '.source_folders[]' "$config_file" | sed ':a;N;$!ba;s/\n/ /g' )
+readarray -t source_folders < <(jq -r '.source_folders[]' "$config_file")
 index_file=$( jq -r .index_file "$config_file" )
 if [[ ! -f "$index_file" ]]; then
     full_backup=true
@@ -28,15 +28,15 @@ pgp_recipient=$( jq -r .pgp_recipient "$config_file" )
 
 # Removing index_file in order to force tar to create a full backup
 if  [ "$full_backup" = true ]; then
-    rm -f $index_file
+    rm -f "$index_file"
 fi
 
 # Create archive and create/update index file
-tar --create --gzip --listed-incremental=$index_file --verbose --file=$output_file $source_folders
+tar --create --gzip --listed-incremental="$index_file" --verbose --file="$output_file" "${source_folders[@]}"
 
 # Encrypt
 echo $output_file_encrypted
-gpg --output $output_file_encrypted --encrypt --recipient $pgp_recipient  $output_file
+gpg --output "$output_file_encrypted" --encrypt --recipient "$pgp_recipient" "$output_file"
 
 # Upload
-gsutil cp $output_file_encrypted  gs://$bucket/
+gsutil cp "$output_file_encrypted" "gs://$bucket/"
